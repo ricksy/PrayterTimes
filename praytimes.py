@@ -4,6 +4,10 @@
 import math
 import re
 import sys
+from datetime import date, timedelta, datetime
+import pytz
+import os
+
 '''
 --------------------- Copyright Block ----------------------
 
@@ -59,7 +63,6 @@ http://praytimes.org/calculation
 '''
 
 #----------------------- PrayTimes Class ------------------------
-
 class PrayTimes():
 
 
@@ -82,9 +85,8 @@ class PrayTimes():
 	methods = {
 		'MWL': {
 			'name': 'Muslim World League',
-			'params': { 'fajr': 15, 'isha': 17} },
-			#'params': { 'fajr': 10.5, 'isha': 17} },
-			#'params': { 'fajr': 18, 'isha': 17 } },
+			'params': { 'fajr': 15, 'isha': '90 min'} },
+			#'params': { 'fajr': 15, 'isha': 17} },
 		'ISNA': {
 			'name': 'Islamic Society of North America (ISNA)',
 			'params': { 'fajr': 15, 'isha': 15 } },
@@ -317,7 +319,7 @@ class PrayTimes():
 			times['maghrib'] = times['sunset'] - self.eval(params['maghrib']) / 60.0
 
 		if self.isMin(params['isha']):
-			times['isha'] = times['maghrib'] - self.eval(params['isha']) / 60.0
+			times['isha'] = times['maghrib'] + self.eval(params['isha']) / 60.0
 		times['dhuhr'] += self.eval(params['dhuhr']) / 60.0
 
 		return times
@@ -422,32 +424,40 @@ class PrayTimes():
 
 prayTimes = PrayTimes()
 
-
+def is_dst(dt,timeZone):
+   aware_dt = timeZone.localize(dt)
+   return aware_dt.dst() != timedelta(0,0)
 #-------------------------- Test Code --------------------------
 
 # sample code to run in standalone mode only
 if __name__ == "__main__":
-	from datetime import date, timedelta
-	date1 =date.today()+ timedelta(days=int(sys.argv[1]))
+	year =int(sys.argv[1])
 	#print('Prayer Times for '+ date1.strftime('%Y-%m-%d') +' in Berlin/Germany\n'+ ('='* 41))
-	prayTimes.tune( {'dhuhr': 5, 'maghrib': 4, 'fajr': 0} )
+	timeZone = pytz.timezone("Europe/Berlin")
+	prayTimes.tune( {'dhuhr': 5, 'asr':5, 'maghrib': 4, 'fajr': 0,'isha': 4} )
 	prayTimes.adjust({'highLats':'AngleBased'})
+	result ="Subject,Start Date,Start Time,End Date,End Time,All Day,Description,Location,UID\n"
 	for month in range (1,13):
-		print("Month "+ str(month))
 		for day in range (1,32):
 			if(month == 2 and day>28):
 				continue
 			if((month == 4 or month == 6 or month==9 or month==11)and day>30):
 				continue
-			d = date(2021, month, day)
-			times = prayTimes.getTimes(d, (52.52, 13.41, 34), 2);
-			#print(prayTimes.getMethod())
-			#for i in ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib','Sunset', 'Isha', 'Midnight']:
-			print(  str(month)+'.'+str(day)+'\t'+times['Fajr'.lower()] +'\t'+
-				   times['Sunrise'.lower()] +'\t'+
-				   times['Dhuhr'.lower()] +'\t'+
-				   times['Asr'.lower()] +'\t'+
-				   times['Maghrib'.lower()] +'\t'+
-				   times['Sunset'.lower()] +'\t'+
-				   times['Isha'.lower()] +'\t'+
-				   times['Midnight'.lower()])
+			d = date(year, month, day)
+			dt = datetime(year, month, day)
+			dst=False
+			if(is_dst(dt,timeZone)):
+				dst=True
+			times = prayTimes.getTimes(d, (52.52, 13.41, 34), 1,dst);
+			dateStr=d.strftime('%m/%d/%Y')
+			filename =sys.argv[1]+".csv"
+			try:
+				os.remove(filename)
+			except OSError:
+				pass
+			with open(filename, 'a') as f:
+				for key,value in times.items():
+					if key == "midnight" or key == "imsak" or key == "sunset":
+						continue
+					result+=key+','+dateStr+','+value+','+dateStr+','+value+',False,'+key+',,'+"\n"
+					f.write(result)
