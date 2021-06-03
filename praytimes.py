@@ -436,7 +436,7 @@ if __name__ == "__main__":
 	timeZone = pytz.timezone("Europe/Berlin")
 	prayTimes.tune( {'dhuhr': 5, 'asr':5, 'maghrib': 4, 'fajr': 0,'isha': 4} )
 	prayTimes.adjust({'highLats':'AngleBased'})
-	result ="Subject,Start Date,Start Time,End Date,End Time,All Day,Description,Location,UID\n"
+	result ="Subject,Start Date,Start Time,All Day,Description,Location,UID\n"
 	for month in range (1,13):
 		for day in range (1,32):
 			if(month == 2 and day>28):
@@ -459,5 +459,5 @@ if __name__ == "__main__":
 				for key,value in times.items():
 					if key == "midnight" or key == "imsak" or key == "sunset":
 						continue
-					result+=key+','+dateStr+','+value+','+dateStr+','+value+',False,'+key+',,'+"\n"
+					result+=key+','+dateStr+','+value+',False,'+key+',,'+"\n"
 					f.write(result)
