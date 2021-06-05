@@ -86,7 +86,6 @@ class PrayTimes():
 		'MWL': {
 			'name': 'Muslim World League',
 			'params': { 'fajr': 15, 'isha': '90 min'} },
-			#'params': { 'fajr': 15, 'isha': 17} },
 		'ISNA': {
 			'name': 'Islamic Society of North America (ISNA)',
 			'params': { 'fajr': 15, 'isha': 15 } },
