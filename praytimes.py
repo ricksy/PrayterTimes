@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # compatible with python 2.x and 3.x
 
 import math
@@ -427,7 +427,7 @@ def is_dst(dt,timeZone):
    aware_dt = timeZone.localize(dt)
    return aware_dt.dst() != timedelta(0,0)
 #-------------------------- Test Code --------------------------
-
+months =['xxx', 'January', 'Febreuary', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 # sample code to run in standalone mode only
 if __name__ == "__main__":
 	year =int(sys.argv[1])
@@ -435,8 +435,10 @@ if __name__ == "__main__":
 	timeZone = pytz.timezone("Europe/Berlin")
 	prayTimes.tune( {'dhuhr': 5, 'asr':5, 'maghrib': 4, 'fajr': 0,'isha': 4} )
 	prayTimes.adjust({'highLats':'AngleBased'})
-	result ="Subject,Start Date,Start Time,All Day,Description,Location,UID\n"
+	result = "For the year " + str(year) + '\n'
+	header = "\tFajr\tsunrise\tDhuhr\tAsr\tMaghrib\tIsha\n"
 	for month in range (1,13):
+		result += months[month] + header
 		for day in range (1,32):
 			if(month == 2 and day>28):
 				continue
@@ -448,15 +450,19 @@ if __name__ == "__main__":
 			if(is_dst(dt,timeZone)):
 				dst=True
 			times = prayTimes.getTimes(d, (52.52, 13.41, 34), 1,dst);
-			dateStr=d.strftime('%m/%d/%Y')
-			filename =sys.argv[1]+".csv"
-			try:
-				os.remove(filename)
-			except OSError:
-				pass
-			with open(filename, 'a') as f:
-				for key,value in times.items():
-					if key == "midnight" or key == "imsak" or key == "sunset":
-						continue
-					result+=key+','+dateStr+','+value+',False,'+key+',,'+"\n"
-					f.write(result)
+			dateStr=d.strftime('%d')
+			result += dateStr +': '
+			for key,value in times.items():
+				if key == "midnight" or key == "imsak" or key == "sunset":
+					continue
+				result += value + '\t' 
+			result += "\n"
+filename =sys.argv[1]+".csv"
+try:
+	os.remove(filename)
+except OSError:
+	pass
+with open(filename, 'a') as f:
+	f.truncate(0) # need '0' when using r+
+	f.write(result)
+
