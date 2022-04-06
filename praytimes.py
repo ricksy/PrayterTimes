@@ -7,6 +7,8 @@ import sys
 from datetime import date, timedelta, datetime
 import pytz
 import os
+from icalendar import Calendar, Event, vCalAddress, vText
+from pathlib import Path
 
 '''
 --------------------- Copyright Block ----------------------
@@ -430,7 +432,22 @@ def is_dst(dt,timeZone):
    aware_dt = timeZone.localize(dt)
    return aware_dt.dst() != timedelta(0,0)
 # sample code to run in standalone mode only
+
+def add_event(eventName, eventDate, eventTime, cal):
+   event = Event()
+   dt = datetime(eventDate.year, eventDate.month, eventDate.day,int(eventTime[:2]), int(eventTime[-2:]))
+   event.add('summary', eventName)
+   event.add('dtstart', dt)
+   event.add('dtend', dt + timedelta(0, 5, 0))
+   organizer = vCalAddress('MAILTO:hello@example.com')
+   organizer.params['cn'] = vText('Sir Jon')
+   organizer.params['role'] = vText('CEO')
+   event['organizer'] = organizer
+   event['location'] = vText('Berlin, Germany')
+   cal.add_component(event)
+
 if __name__ == "__main__":
+    cal = Calendar()
     year = date.today().year
     timeZone = pytz.timezone("Europe/Berlin")
     prayTimes.tune( {'dhuhr': 5, 'asr':5, 'maghrib': 4, 'fajr': 0,'isha': 4} )
@@ -453,6 +470,7 @@ if __name__ == "__main__":
            if key == "midnight" or key == "imsak" or key == "sunset":
                continue
            result += value + '\t' 
+           add_event(key, dt, value, cal)
        result += "\n"
     filename = str(year) + ".csv"
     try:
@@ -462,4 +480,6 @@ if __name__ == "__main__":
     with open(filename, 'a') as f:
         f.truncate(0) # need '0' when using r+
         f.write(result)
-
+    f = open(str(year) + '.ics', 'wb')
+    f.write(cal.to_ical())
+    f.close()
